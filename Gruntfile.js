@@ -28,10 +28,6 @@ module.exports = function( grunt ) {
             }
         }
 
-        ,clean: {
-            tests: ["dist:test1"]
-        }
-
         ,doktor: {
             options: {
                 homeFilePath: "README.md" // Home page. You'll get an error if this doesn't exist or is not set.
@@ -73,7 +69,6 @@ module.exports = function( grunt ) {
     grunt.loadTasks('tasks');
 
     grunt.loadNpmTasks('grunt-contrib-jshint');
-    grunt.loadNpmTasks('grunt-contrib-clean');
     grunt.loadNpmTasks('grunt-contrib-connect');
     grunt.loadNpmTasks('grunt-jasmine-node-coverage');
 }
