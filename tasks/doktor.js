@@ -23,19 +23,19 @@ module.exports = function(grunt) {
 
 		var config = this.options({
 			// .md is mandatory
-			fileTypes: ["html","css","js","ejs","scss"]
-			,openComment: "/***"
+			openComment: "/***"
 			,closeComment: "***/"
 			,endCode: "/*@end*/"
-			,pluginDir: "custom_modules/"+NS+"/"
+			,pluginDir: ""
 			,host: ""
 			,ignoreDirNames: [ "_archive", "img" ]
-			,homeTitle: "root"
+			,homeTitle: "Root"
 			,homeFilePath: null
 			,unusedReadMeStr: "TODO"
 			,cleanDest: false
 			,banner: null
 		});
+
 
 		// add slash is one doesn't exist
 		if( typeof config.host === "string" ) {
@@ -47,33 +47,49 @@ module.exports = function(grunt) {
 		var done = this.async();
 		grunt.log.writeln( NS.yellow );
 
-		var fileObj = this.files[0];
-
-		var SNIPPETS_PATH = fileObj.dest + "/snippets/";
-
-		if( fileObj.src.length === 0 ) {
+		if( this.files.length === 0 ) {
 			grunt.log.error( "'"+NS+"' needs at least 1 src directory!".red );
 			done();
 			return;
 		}
 
-		// cleans out the old first
-		if( config.cleanDest && grunt.file.exists(fileObj.dest) ) grunt.file.delete( fileObj.dest, {force:true} );
+		var mdFound = false;
+		this.files.forEach(function( fileObj ) {
 
-		var bootstrapFiles = grunt.file.expand({ cwd: config.pluginDir + "resources" }, "bootstrap-3.3.1/*");
-		
-		_.forEach( bootstrapFiles, function(relPath) {
-			grunt.file.copy( config.pluginDir + "resources/" + relPath, fileObj.dest + "/"+relPath );
+			var SNIPPETS_PATH = fileObj.dest + "/snippets/";
+
+
+			// cleans out the old first
+			if( config.cleanDest && grunt.file.exists(fileObj.dest) ) grunt.file.delete( fileObj.dest, {force:true} );
+
+			var bootstrapFiles = grunt.file.expand({ cwd: config.pluginDir + "resources" }, "bootstrap-3.3.1/*");
+			
+			_.forEach( bootstrapFiles, function(relPath) {
+				grunt.file.copy( config.pluginDir + "resources/" + relPath, fileObj.dest + "/"+relPath );
+			});
+
+			console.log( fileObj.src );
+
+			var commentsData = parseSrc( config, fileObj )
+				,navMarkup = getNavMarkup( fileObj.dest, config, commentsData );
+
+			grunt.file.write( SNIPPETS_PATH + "/nav-pages.html", navMarkup.pages );
+			grunt.file.write( SNIPPETS_PATH + "/nav-tags.html", navMarkup.tags );
+
+			writeSnippets( SNIPPETS_PATH, commentsData, config );
+			writeTemplate( fileObj.dest, config, SNIPPETS_PATH, commentsData );
+
+			// check that there are markdown files present
+			var mdFilesArr = _.where( fileObj.src, function(filename) {
+				return filename.lastIndexOf(".md") === filename.length -3;
+			});
+			
+			if( mdFilesArr ) mdFound = true;
 		});
-
-		var commentsData = parseSrc( config, fileObj )
-			,navMarkup = getNavMarkup( fileObj.dest, config, commentsData );
-
-		grunt.file.write( SNIPPETS_PATH + "/nav-pages.html", navMarkup.pages );
-		grunt.file.write( SNIPPETS_PATH + "/nav-tags.html", navMarkup.tags );
-
-		writeSnippets( SNIPPETS_PATH, commentsData, config );
-		writeTemplate( fileObj.dest, config, SNIPPETS_PATH, commentsData );
+		
+		// Markdown files are used to create pages in the output. They're not mandatory, but are generally a good idea.
+		if( !mdFound )
+			grunt.log.warn( "WARNING. Did not find any markdown '.md' files in your src.".yellow );
 
 		done();
 	});
@@ -314,27 +330,25 @@ module.exports = function(grunt) {
 		var codeComments = []
 			,readmeNav = {};
 
-		if( config.homeFilePath ) {
-			var src = config.homeFilePath;
-			if( !grunt.file.exists( src ) ) {
-				grunt.log.error("File doesn't exist: ".red + src);
-				return false;
-			}
+		var homeSrc = config.homeFilePath;
 
-			var dirSlashInd = src.lastIndexOf("/")
-				,navObj = readmeNav[ "root" ] = {};
+		if( !homeSrc || !grunt.file.exists( homeSrc ) )
+			throw new Error( "Option 'homeFilePath' was not found - got '" + homeSrc + "'. Did you forget to set it?" );
+
+		// set the home page using 'homeFilePath'
+		var dirSlashInd = homeSrc.lastIndexOf("/")
+			,navObj = readmeNav[ "root" ] = {};
+		
+		marked( grunt.file.read(homeSrc), function(err, content) {
+			if(err) grunt.log.error( err );
+
+			navObj.markup = content;
+			navObj.tags = getTags( content );
+		});
+
+
 			
-			marked( grunt.file.read(src), function(err, content) {
-				if(err) grunt.log.error( err );
-
-				navObj.markup = content;
-				navObj.tags = getTags( content );
-			});
-
-		}
-
 		_.forEach( fileObj.src, function( src ) {
-
 
 			var extDotInd = src.lastIndexOf(".")
 				,ext = src.slice( extDotInd+1 );
@@ -353,6 +367,7 @@ module.exports = function(grunt) {
 				grunt.log.warn("Skipping ignored directory: ".yellow + src);
 				return;
 			}
+
 
 			if( ext === "md" ) {
 
@@ -381,7 +396,7 @@ module.exports = function(grunt) {
 					,src: src
 				});
 
-			} else if( config.fileTypes.indexOf(ext) !== -1 ) {
+			} else {
 
 				var code = grunt.file.read(src)
 					,commentArr = code.split( config.openComment );

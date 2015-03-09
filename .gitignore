@@ -8,5 +8,8 @@ node_modules
 *.sublime-project
 *.sublime-workspace
 
+dist
+coverage
+
 */npm-debug.log
 npm-debug.log

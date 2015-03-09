@@ -34,13 +34,32 @@ module.exports = function( grunt ) {
 
         ,doktor: {
             options: {
-                homeFilePath: "README.md"
-                ,ignoreDirNames: [ "_archive" ]
-                ,unusedReadMeStr: "Add dependency notes here in Markdown format"
+                homeFilePath: "README.md" // Home page. You'll get an error if this doesn't exist or is not set.
+                ,ignoreDirNames: [ "_archive" ] // folder names to ignore
+                ,unusedReadMeStr: "Add dependency notes here in Markdown format" // message for unset README's
                 ,banner: '<%= pkg.name %> - <%= pkg.version %> - ' + grunt.template.today("yyyy-mm-dd, h:MM:ss TT")
             }
 
+            // If src does not include '.md' files it will throw a warning, as this is the suggested approach
+            ,src: [ 'resources/example-src/**/*.{md,html,js,scss,txt,ejs}' ]
+
             ,test2: require("./tests/grunt_configs/test2.js").test
+        }
+
+        ,connect: {
+            options: {
+                hostname: 'localhost',
+                keepalive: true,
+                livereload: false,
+                port: 8890,
+                base: "",
+            }
+
+            ,test2: {
+                options: {
+                    open: "http://localhost:8890/dist/test2/index.html"
+                }
+            }
         }
     });
 
@@ -49,11 +68,12 @@ module.exports = function( grunt ) {
 
     grunt.registerTask("test", ['jshint', 'test2', 'test1'] ); // 'test1' must go last, as this actually runs the jasmine tests
 
-    grunt.registerTask('default', ['test'].concat(  grunt.option("dirty") ? [] : ["clean:tests"] )  );
+    grunt.registerTask('default', ['test'].concat(  grunt.option("server") ? ["connect:"+grunt.option("server")] : [] )  );
 
     grunt.loadTasks('tasks');
 
     grunt.loadNpmTasks('grunt-contrib-jshint');
     grunt.loadNpmTasks('grunt-contrib-clean');
+    grunt.loadNpmTasks('grunt-contrib-connect');
     grunt.loadNpmTasks('grunt-jasmine-node-coverage');
 }
