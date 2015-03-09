@@ -1,0 +1,16 @@
+/***
+@tags [example, txt]
+@doks Usernames and passwords for the project
+***/
+un: xxxx
+pw: xxxx
+/*@end*/
+
+
+/***
+@tags [example, txt]
+@doks Personal banking details.
+***/
+un: xxxx
+pw: xxxx
+/*@end*/

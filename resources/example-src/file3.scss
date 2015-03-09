@@ -1,0 +1,21 @@
+$gold: rgba(109,104,24,1);
+
+.prod-list {
+	width: 100px;
+	background-color: rgba(100,100,200,1);
+}
+
+.prod {
+	width: 90px;
+	margin: 5px;
+	background-color: rgba(150,100,200,1);
+}
+
+/***
+@tags [example, styles, scss]
+@doks Expensive products must be coloured gold.
+***/
+.prod-exp {
+	background-color: $gold;
+}
+/*@end*/

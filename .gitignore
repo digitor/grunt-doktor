@@ -1,0 +1,12 @@
+*/node_modules
+node_modules
+
+*.lnk
+*DS_Store
+*.db
+*log.ejs
+*.sublime-project
+*.sublime-workspace
+
+*/npm-debug.log
+npm-debug.log

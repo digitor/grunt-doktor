@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html class="no-js"  >
+	<head>
+
+	<title><%- config.heading %></title>
+	<meta name="description" content="<%= config.description %>" >
+
+	<meta http-equiv="X-UA-Compatible" content="IE=edge">
+	<meta http-equiv="Content-Type" content="text/html; charset=utf-8" >
+
+	<meta name="charset" content="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1.0, maximum-scale=1.0">
+
+	<link rel="stylesheet" href="<%= config.host %>bootstrap-3.3.1/bootstrap.min.css">
+	<link rel="stylesheet" href="<%= config.host %>bootstrap-3.3.1/bootstrap-theme.min.css">
+
+	<style>
+
+		h1 {
+			font-size: 1.5em;
+			margin: 
+		}
+		h2 {
+			font-size: 1.3em;
+		}
+		h3 {
+			font-size: 1.2em;
+		}
+		h4 {
+			font-size: 1.1em;
+		}
+		h5 {
+			font-size: 1.1em;
+			font-style: italic;
+		}
+		.breadcrumb {
+			margin-bottom: 5px;
+		}
+		.doktor-pagecontent {
+			padding-bottom: 30px;
+		}
+		.doktor-sidenav > .affix a {
+			padding: 2px 8px;
+		}
+		.doktor-sidenav > .affix {
+			/* Using border-bottom, to compensate for header */
+			border-bottom: solid 135px white;
+			overflow-y: scroll;
+			height: 100%;
+			width: inherit;
+		}
+
+		.doktor-banner {
+			font-size: 0.7em;
+			margin: 0 5px 10px;
+		}
+
+		.is-navbarhidden .doktor-sidenav > .affix {
+			top: 10px;
+			border-bottom-width: 50px;
+		}
+
+		.navbar li[data-state=unused],
+		.doktor-sidenav-content li[data-state=unused] {
+			opacity: 0.3;
+		}
+		.doktor-sidenav-content .active > a {
+			background-image: linear-gradient(to bottom,#337ab7 0,#2e6da4 100%);
+			color: white;
+		}
+		h1,
+		.doktor-section {
+			margin-top: 10px;
+			margin-bottom: 20px;
+			border-bottom: 1px solid #ccc;
+			padding-bottom: 14px;
+		}
+		pre {
+			background-color: #333;
+			color: #ddd;
+		}
+		/* in case popovers are used with code blocks */
+		.popover {
+			max-width: none;
+		}
+    </style>
+
+	<script src="<%= config.host %>bootstrap-3.3.1/jquery.min.js"></script>
+	<script src="<%= config.host %>bootstrap-3.3.1/bootstrap.min.js"></script>
+
+	<script>
+		$(document).ready( function() {
+			var h = $("#navbar").height()
+				,$body = $("body");
+
+			$(window).on("scroll", function(evt) {
+				if( this.scrollY > h )	$body.addClass("is-navbarhidden");
+				else					$body.removeClass("is-navbarhidden");
+			});
+
+			// in case popovers get used
+			$('[data-toggle="popover"]').popover();
+		});
+	</script>
+
+	</head>
+
+	<body>
+
+		<header id="navbar" class="navbar navbar-default">
+			<div class="container-fluid">
+				<div class="navbar-header">
+					<button class="navbar-toggle collapsed" type="button" data-toggle="collapse" data-target=".bs-navbar-collapse">
+						<span class="sr-only">Toggle navigation</span>
+						<span class="icon-bar"></span>
+						<span class="icon-bar"></span>
+						<span class="icon-bar"></span>
+					</button>
+					<a href="<%= config.host %>" class="navbar-brand"><%- config.homeTitle %></a>
+				</div>
+				<nav class="collapse navbar-collapse bs-navbar-collapse" role="navigation">
+					<ul class='nav navbar-nav'>
+						<li class='dropdown doktor-header2'>
+							<a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false">READMEs<span class="caret"></span></a>
+							<ul class="dropdown-menu" role="menu">
+								<%- config.nav.pages %>
+							</ul>
+						</li>
+						<li class='dropdown doktor-header2'>
+							<a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false">Tags <span class="caret"></span></a>
+							<ul class="dropdown-menu" role="menu">
+								<%- config.nav.tags %>
+							</ul>
+						</li>
+					</ul>
+				</nav>
+
+				<ol class="breadcrumb">
+					<%- config.nav.breadcrumbs %>
+				</ol>
+				<p class="doktor-banner pull-right"><%- config.banner %></p>
+			</div>
+		</header>
+
+		<div class="container">
+			<div class="row">
+				<div class="col-md-9 doktor-pagecontent">
+					
+					<%if( config.heading ) {%>
+						<h1 class="doktor-header1">
+							<%- config.heading %>
+						</h1>
+					<%}%>
+
+					<%- config.body %>
+				</div>
+				<div class="col-md-3 doktor-sidenav">
+					<div class="hidden-print hidden-xs hidden-sm affix">
+						<nav class="doktor-sidenav-content">
+							<h3>READMEs</h3>
+							<ul class="nav">
+								<%- config.nav.pages %>
+							</ul>
+
+							<h3>Tags</h3>
+							<ul class="nav">
+								<%- config.nav.tags %>
+							</ul>
+						</nav>
+					</div>
+				</div>
+			</div>
+		</div>
+
+    </body>
+</html>
