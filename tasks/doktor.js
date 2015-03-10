@@ -21,26 +21,25 @@ module.exports = function(grunt) {
 		,"Documentation generator for any text file, based on comments and tags"
 		,function() {
 
-		var config = this.options({
-			// .md is mandatory
+		var CNF = this.options({
 			openComment: "/***"
 			,closeComment: "***/"
 			,endCode: "/*@end*/"
-			,pluginDir: ""
+			,pluginDir: "node_modules/"+NS
 			,host: ""
 			,ignoreDirNames: [ "_archive", "img" ]
 			,homeTitle: "Root"
 			,homeFilePath: null
-			,unusedReadMeStr: "TODO"
+			,unusedReadMeStr: "Add notes here in Markdown format"
 			,cleanDest: false
 			,banner: null
 		});
 
 
-		// add slash is one doesn't exist
-		if( typeof config.host === "string" ) {
-			if( config.host === "" || config.host.substr( config.host.length-1 ) !== "/" )
-				config.host += "/";
+		// add slash if one doesn't exist
+		if( typeof CNF.host === "string" ) {
+			if( CNF.host === "" || CNF.host.substr( CNF.host.length-1 ) !== "/" )
+				CNF.host += "/";
 		}
 
 
@@ -56,35 +55,26 @@ module.exports = function(grunt) {
 		var mdFound = false;
 		this.files.forEach(function( fileObj ) {
 
-			var SNIPPETS_PATH = fileObj.dest + "/snippets/";
-
+			var snippetsPath = fileObj.dest + "/snippets/";
 
 			// cleans out the old first
-			if( config.cleanDest && grunt.file.exists(fileObj.dest) ) grunt.file.delete( fileObj.dest, {force:true} );
+			if( CNF.cleanDest && grunt.file.exists(fileObj.dest) ) grunt.file.delete( fileObj.dest, {force:true} );
 
-			var bootstrapFiles = grunt.file.expand({ cwd: config.pluginDir + "resources" }, "bootstrap-3.3.1/*");
+			var bootstrapFiles = grunt.file.expand({ cwd: CNF.pluginDir + "resources" }, "bootstrap-3.3.1/*");
 			
 			_.forEach( bootstrapFiles, function(relPath) {
-				grunt.file.copy( config.pluginDir + "resources/" + relPath, fileObj.dest + "/"+relPath );
+				grunt.file.copy( CNF.pluginDir + "resources/" + relPath, fileObj.dest + "/"+relPath );
 			});
 
-			console.log( fileObj.src );
+			var commentsData = parseSrc( fileObj.src, CNF.homeFilePath, CNF.ignoreDirNames, CNF.unusedReadMeStr, 
+										CNF.host, CNF.openComment, CNF.closeComment, CNF.endCode );
 
-			var commentsData = parseSrc( config, fileObj )
-				,navMarkup = getNavMarkup( fileObj.dest, config, commentsData );
-
-			grunt.file.write( SNIPPETS_PATH + "/nav-pages.html", navMarkup.pages );
-			grunt.file.write( SNIPPETS_PATH + "/nav-tags.html", navMarkup.tags );
-
-			writeSnippets( SNIPPETS_PATH, commentsData, config );
-			writeTemplate( fileObj.dest, config, SNIPPETS_PATH, commentsData );
+			writeNav( snippetsPath, fileObj.dest, CNF.host, CNF.homeTitle, commentsData );
+			writeSnippets( snippetsPath, commentsData, CNF.host );
+			writeTemplate( fileObj.dest, snippetsPath, commentsData, CNF.pluginDir, CNF.host, CNF.homeTitle, CNF.banner );
 
 			// check that there are markdown files present
-			var mdFilesArr = _.where( fileObj.src, function(filename) {
-				return filename.lastIndexOf(".md") === filename.length -3;
-			});
-			
-			if( mdFilesArr ) mdFound = true;
+			if( checkForMarkdown(fileObj.src) ) mdFound = true;
 		});
 		
 		// Markdown files are used to create pages in the output. They're not mandatory, but are generally a good idea.
@@ -93,6 +83,22 @@ module.exports = function(grunt) {
 
 		done();
 	});
+
+
+	function writeNav( snippetsPath, dest, host, homeTitle, commentsData ) {
+		var navMarkup = getNavMarkup( dest, host, homeTitle, commentsData );
+
+		grunt.file.write( snippetsPath + "/nav-pages.html", navMarkup.pages );
+		grunt.file.write( snippetsPath + "/nav-tags.html", navMarkup.tags );
+	}
+
+	function checkForMarkdown( srcArr ) {
+		var mdFilesArr = _.where( srcArr, function(filename) {
+			return filename.lastIndexOf(".md") === filename.length -3;
+		});
+
+		return mdFilesArr.length > 0;
+	}
 
 
 	function stripPreceedingDirChange( path ) {
@@ -113,9 +119,9 @@ module.exports = function(grunt) {
 	}
 
 
-	function writeTemplate( dest, config, snippetsPath, commentsData ) {
+	function writeTemplate( dest, snippetsPath, commentsData, pluginDir, host, homeTitle, banner ) {
 
-		var templatePath = config.pluginDir + "resources/template.ejs"
+		var templatePath = pluginDir + "resources/template.ejs"
 		if( grunt.file.exists( templatePath ) ) {
 
 
@@ -149,10 +155,10 @@ module.exports = function(grunt) {
 								return markup;
 							})( name.split("/") )
 						}
-						,body: getTaggedMarkup( navObj, config.host, false, "<strong>View in-code docs by tag:</strong>" )
-						,host: config.host
-						,homeTitle: config.homeTitle
-						,banner: config.banner || "-"
+						,body: getTaggedMarkup( navObj, host, false, "<strong>View in-code docs by tag:</strong>" )
+						,host: host
+						,homeTitle: homeTitle
+						,banner: banner || "-"
 					}
 				});
 
@@ -166,7 +172,7 @@ module.exports = function(grunt) {
 				var body = "";
 				_.forEach( commentsData.codeComments, function( codeCmt ) {
 					if( codeCmt.tags.indexOf(tag) !== -1 ) {
-						body += "\n" + getCodeCmtMarkup(codeCmt, config.host) + "\n";
+						body += "\n" + getCodeCmtMarkup(codeCmt, host) + "\n";
 					}
 				});
 
@@ -180,9 +186,9 @@ module.exports = function(grunt) {
 							,breadcrumbs: []
 						}
 						,body: body
-						,host: config.host
-						,homeTitle: config.homeTitle
-						,banner: config.banner || "-"
+						,host: host
+						,homeTitle: homeTitle
+						,banner: banner || "-"
 					}
 				});
 
@@ -213,16 +219,16 @@ module.exports = function(grunt) {
 	}
 
 
-	function writeSnippets( dest, commentsData, config ) {
+	function writeSnippets( dest, commentsData, host ) {
 
 		// This isn't really being used yet, but may come in handy
 
 		_.forEach( commentsData.readmeNav, function( navObj, name ) {
-			grunt.file.write( dest + "/" + name + ".html", getTaggedMarkup( navObj, config.host ) );
+			grunt.file.write( dest + "/" + name + ".html", getTaggedMarkup( navObj, host ) );
 		});
 		
 		_.forEach( commentsData.codeComments, function( codeCmt ) {
-			var markup = getCodeCmtMarkup( codeCmt, config.host );
+			var markup = getCodeCmtMarkup( codeCmt, host );
 			grunt.file.write( dest + "/code/" + codeCmt.ext + "/" + Math.random().toString().replace(".","") + ".html", markup );
 		});
 	}
@@ -260,18 +266,18 @@ module.exports = function(grunt) {
 	}
 
 
-	function getNavMarkup( dest, config, commentsData ) {
+	function getNavMarkup( dest, host, homeTitle, commentsData ) {
 
 		var homeDone = false
 			,pages = ""
 			,tags = "";
 
 		_.forEach( commentsData.readmeNav, function( navObj, name ) {
-			var path = config.host + "index.html"
-				,linkName = config.homeTitle;
+			var path = host + "index.html"
+				,linkName = homeTitle;
 
 			if( homeDone ) {
-				path = config.host + name + ".html";
+				path = host + name + ".html";
 
 				var linkNameArr = name.split("/");
 				linkName = "";
@@ -290,7 +296,7 @@ module.exports = function(grunt) {
 		});
 
 		_.forEach( getAllTags(commentsData), function( tag ) {
-			tags += "\n<li><a href='"+config.host+"tags/"+tag+".html'>" + tag + "</a></li>";
+			tags += "\n<li><a href='"+host+"tags/"+tag+".html'>" + tag + "</a></li>";
 		});
 
 		return {
@@ -325,12 +331,12 @@ module.exports = function(grunt) {
 	}
 
 
-	function parseSrc( config, fileObj ) {
+	function parseSrc( srcArr, homeFilePath, ignoreDirNames, unusedReadMeStr, host, openComment, closeComment, endCode) {
 
 		var codeComments = []
 			,readmeNav = {};
 
-		var homeSrc = config.homeFilePath;
+		var homeSrc = homeFilePath;
 
 		if( !homeSrc || !grunt.file.exists( homeSrc ) )
 			throw new Error( "Option 'homeFilePath' was not found - got '" + homeSrc + "'. Did you forget to set it?" );
@@ -348,7 +354,7 @@ module.exports = function(grunt) {
 
 
 			
-		_.forEach( fileObj.src, function( src ) {
+		_.forEach( srcArr, function( src ) {
 
 			var extDotInd = src.lastIndexOf(".")
 				,ext = src.slice( extDotInd+1 );
@@ -359,7 +365,7 @@ module.exports = function(grunt) {
 			}
 
 			// filter out matching directories to ignore
-			var ignoreSrc = _.filter( config.ignoreDirNames, function( dirName ) {
+			var ignoreSrc = _.filter( ignoreDirNames, function( dirName ) {
 				return _.contains( src.split("/"), dirName );
 			});
 
@@ -381,7 +387,7 @@ module.exports = function(grunt) {
 
 					navObj.markup = content;
 					navObj.tags = getTags( content );
-					navObj.unused = (content.indexOf(config.unusedReadMeStr) !== -1);
+					navObj.unused = (content.indexOf(unusedReadMeStr) !== -1);
 				});
 
 
@@ -391,7 +397,7 @@ module.exports = function(grunt) {
 					,docs: getTaggedMarkup( {
 							markup: markdown.replace("#","####").split("\n#").join("\n####")
 							,tags: navObj.tags
-						}, config.host, true )
+						}, host, true )
 					,codeBlock: null
 					,src: src
 				});
@@ -399,7 +405,7 @@ module.exports = function(grunt) {
 			} else {
 
 				var code = grunt.file.read(src)
-					,commentArr = code.split( config.openComment );
+					,commentArr = code.split( openComment );
 				
 				_.forEach( commentArr, function(cmt, i) {
 					
@@ -407,16 +413,16 @@ module.exports = function(grunt) {
 
 						
 						var tags = getTags( cmt )
-							,cmtBlockArr = cmt.split( config.closeComment )
+							,cmtBlockArr = cmt.split( closeComment )
 
 
 						if( cmtBlockArr.length <= 1 ) {
-							grunt.log.warn("Comment not closed properly. Must be closed with ".red + config.closeComment + " - src: " + src );
+							grunt.log.warn("Comment not closed properly. Must be closed with ".red + closeComment + " - src: " + src );
 							return;
 						}
 
-						if( cmtBlockArr[1].indexOf( config.endCode ) === -1 ) {
-							grunt.log.warn("Comment ".red + config.endCode + " not found. Must come after the related code block ".red + " - src: " + src  );
+						if( cmtBlockArr[1].indexOf( endCode ) === -1 ) {
+							grunt.log.warn("Comment ".red + endCode + " not found. Must come after the related code block ".red + " - src: " + src  );
 
 							// check for common typos
 							if( cmtBlockArr[1].indexOf( "/*end*/" ) !== -1 )
@@ -424,8 +430,8 @@ module.exports = function(grunt) {
 							return;
 						}
 						
-						var docs = getDocs( cmtBlockArr[0], config.closeComment )
-							,codeBlock = sanitizeCodeBlock( cmtBlockArr[1].split( config.endCode )[0] )
+						var docs = getDocs( cmtBlockArr[0], closeComment )
+							,codeBlock = cmtBlockArr[1].split( endCode )[0];
 
 						codeComments.push({
 							ext: ext
@@ -481,13 +487,6 @@ module.exports = function(grunt) {
 					.split("\r").join(" ");
 	}
 
-
-	function sanitizeCodeBlock( str ) {
-		// needs work
-		// return "<pre><code class='lang-css'>" + str.split("\t\t").join("\t") + "</code></pre>";
-		// return "<pre><code class='lang-css'>" + str + "</code></pre>";
-		return str;
-	}
 
 	return {
 		tests: {

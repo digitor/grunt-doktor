@@ -31,13 +31,11 @@ module.exports = function( grunt ) {
         ,doktor: {
             options: {
                 homeFilePath: "README.md" // Home page. You'll get an error if this doesn't exist or is not set.
+                ,pluginDir: ""
                 ,ignoreDirNames: [ "_archive" ] // folder names to ignore
                 ,unusedReadMeStr: "Add dependency notes here in Markdown format" // message for unset README's
                 ,banner: '<%= pkg.name %> - <%= pkg.version %> - ' + grunt.template.today("yyyy-mm-dd, h:MM:ss TT")
             }
-
-            // If src does not include '.md' files it will throw a warning, as this is the suggested approach
-            ,src: [ 'resources/example-src/**/*.{md,html,js,scss,txt,ejs}' ]
 
             ,test2: require("./tests/grunt_configs/test2.js").test
         }
