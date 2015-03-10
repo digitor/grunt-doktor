@@ -462,12 +462,36 @@ module.exports = function(grunt) {
 		return sanitizeTags( arr[1].split("]")[0] + "]" );
 	}
 
+	/***
+	@tags [getDocs]
+	@docs Gets the text between `@docs` and what ever you specify for `closeComment`.
+	***/
 	function getDocs( str, closeComment ) {
+
+		// If no documentation found
 		var arr = str.split("@docs");
 		if( arr.length === 1 ) return "";
-		return sanitizeDocs( str.split("@docs")[1].split( closeComment )[0] );
-	}
 
+		// Now remove the first space
+		var documentation = arr[1];
+			 if( documentation[0] === " " ) documentation = documentation.replace(" ", "");
+		else if( documentation[0] === "  " ) documentation = documentation.replace("  ", "");
+		else if( documentation[0] === "\t" ) documentation = documentation.replace("\t", "");
+
+		// then run result through a sanitiser
+		return sanitizeDocs( documentation.split( closeComment )[0] );
+	}
+	/*@end*/
+
+
+	/***
+	@tags [sanitizeTags]
+	@docs Takes a value surrounded by `[]` (Array) delimeters and converts 
+	it into an actual array. You can even omit the `[]` characters entirely
+	and just use comma separated values and it will work the same way. You
+	can use quotes if you like, but you don't have to - the result will be 
+	the same.
+	***/
 	function sanitizeTags( str ) {
 		return str.split("[").join("")
 					.split("]").join("")
@@ -478,19 +502,42 @@ module.exports = function(grunt) {
 					.split(' ').join('')
 					.split(",");
 	}
+	/*@end*/
 
+	/***
+	@tags [sanitizeDocs]
+	@docs If dev uses astersk's for line break for some reason, 
+	* like this block does, here they get replaced for HTML 
+	* line breaks. Also replaces non-html line breaks with spaces so 
+	* you can add breaks to your documentation without losing flow. 
+	* Use `<br>` or `\n*` if you want an actualy HTML line break.
+	* If you actually need an asterisk character, use `**` and it will
+	* be converted into a single `*`.
+	***/
 	function sanitizeDocs( str ) {
-		return str.split(" * ").join("<br>")
+		var CUSTOM_TAG = "|ASTERISK|";
+		// `\t*` must come first, before tab gets replaced with empty string
+		return   str.split("**").join(CUSTOM_TAG)
+					.split("\t*").join("<br>")
+					// breaks, spaces and tabs get stripped out
 					.split("\t").join("")
 					.split("  ").join(" ")
+					.split("  ").join(" ")
+					.split("  ").join(" ") // deliberately getting rid of lots of double spaces
 					.split("\n").join(" ")
-					.split("\r").join(" ");
+					.split("\r").join(" ")
+					// other astersk's converted
+					.split(" *").join("<br>")
+					.split(CUSTOM_TAG).join("*");
 	}
+	/*@end*/
 
 
 	return {
 		tests: {
-
+			sanitizeDocs: sanitizeDocs
+			,sanitizeTags: sanitizeTags
+			,getDocs: getDocs
 		}
 	}
 };
