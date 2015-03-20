@@ -45,13 +45,13 @@ module.exports = function( grunt ) {
                 hostname: 'localhost',
                 keepalive: true,
                 livereload: false,
-                port: 8890,
+                port: 8880,
                 base: "",
             }
 
             ,test2: {
                 options: {
-                    open: "http://localhost:8890/dist/test2/index.html"
+                    open: "http://localhost:8880/dist/test2/index.html"
                 }
             }
         }

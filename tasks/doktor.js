@@ -75,11 +75,14 @@ module.exports = function(grunt) {
 
 			// check that there are markdown files present
 			if( checkForMarkdown(fileObj.src) ) mdFound = true;
+
+			grunt.file.delete( snippetsPath, {force:true} );
 		});
 		
 		// Markdown files are used to create pages in the output. They're not mandatory, but are generally a good idea.
 		if( !mdFound )
 			grunt.log.warn( "WARNING. Did not find any markdown '.md' files in your src.".yellow );
+
 
 		done();
 	});

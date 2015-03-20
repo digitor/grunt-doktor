@@ -1,7 +1,7 @@
 {
    "name": "grunt-doktor"
   ,"description": "Documentation generator for any text file, based on comments and tags"
-  ,"version": "0.1.1"
+  ,"version": "0.1.2"
   ,"author": {
      "name": "Jim Doyle"
     ,"email": "info@jimdoyle.com.au"
